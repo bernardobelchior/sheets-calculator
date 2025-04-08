@@ -12,17 +12,8 @@ import {
 } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { Plus, Trash2 } from 'lucide-react-native';
-import {calculateCuts} from './layout'
+import { calculateCuts, type PieceRequirement, type SheetDimensions } from '@/lib/layout';
 
-interface SheetDimensions {
-  width: number;
-  height: number;
-}
-
-interface PieceRequirement extends SheetDimensions {
-  quantity: number;
-  color?: string;
-}
 
 interface Position {
   x: number;
