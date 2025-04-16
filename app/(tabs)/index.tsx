@@ -59,7 +59,6 @@ export default function Calculator() {
     { width: 0, height: 0, quantity: 1, color: COLORS[0] },
   ]);
   const [result, setResult] = useState<CutResult | null>(null);
-  const { width: screenWidth } = useWindowDimensions();
 
   const addPiece = () => {
     setPieces([
@@ -145,64 +144,14 @@ export default function Calculator() {
             </TouchableOpacity>
           </View>
           {pieces.map((piece, index) => (
-            <View key={index} className="px-1.5 mb-2">
-              <View style={styles.pieceHeader}>
-                <View
-                  style={[
-                    styles.colorIndicator,
-                    { backgroundColor: piece.color },
-                  ]}
-                />
-                <Text className="text-lg font-semibold text-slate-700">
-                  Piece {index + 1}
-                </Text>
-                {pieces.length > 1 && (
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removePiece(index)}
-                  >
-                    <Trash2 size={20} color="#ef4444" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={styles.row}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Width (mm)</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={piece.width.toString()}
-                    onChangeText={(text) =>
-                      updatePiece(index, { width: Number(text) })
-                    }
-                  />
-                </View>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Height (mm)</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={piece.height.toString()}
-                    onChangeText={(text) =>
-                      updatePiece(index, { height: Number(text) })
-                    }
-                  />
-                </View>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Quantity</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={piece.quantity.toString()}
-                    onChangeText={(text) =>
-                      updatePiece(index, {
-                        quantity: Math.max(1, Number(text)),
-                      })
-                    }
-                  />
-                </View>
-              </View>
-            </View>
+            <PieceItem
+              key={index}
+              piece={piece}
+              index={index}
+              totalPieces={pieces.length}
+              onUpdate={updatePiece}
+              onRemove={removePiece}
+            />
           ))}
         </View>
 
@@ -226,6 +175,76 @@ export default function Calculator() {
     </KeyboardAvoidingView>
   );
 }
+
+interface PieceItemProps {
+  piece: PieceRequirement;
+  index: number;
+  totalPieces: number;
+  onUpdate: (index: number, updates: Partial<PieceRequirement>) => void;
+  onRemove: (index: number) => void;
+}
+
+const PieceItem = ({
+  piece,
+  index,
+  totalPieces,
+  onUpdate,
+  onRemove,
+}: PieceItemProps) => {
+  return (
+    <View className="px-1.5 mb-2">
+      <View style={styles.pieceHeader}>
+        <View
+          style={[styles.colorIndicator, { backgroundColor: piece.color }]}
+        />
+        <Text className="text-lg font-semibold text-slate-700">
+          Piece {index + 1}
+        </Text>
+        {totalPieces > 1 && (
+          <TouchableOpacity
+            style={styles.removeButton}
+            onPress={() => onRemove(index)}
+          >
+            <Trash2 size={20} color="#ef4444" />
+          </TouchableOpacity>
+        )}
+      </View>
+      <View style={styles.row}>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Width (mm)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={piece.width.toString()}
+            onChangeText={(text) => onUpdate(index, { width: Number(text) })}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Height (mm)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={piece.height.toString()}
+            onChangeText={(text) => onUpdate(index, { height: Number(text) })}
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Quantity</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={piece.quantity.toString()}
+            onChangeText={(text) =>
+              onUpdate(index, {
+                quantity: Math.max(1, Number(text)),
+              })
+            }
+          />
+        </View>
+      </View>
+    </View>
+  );
+};
 
 interface ResultsSectionProps {
   result: CutResult;
