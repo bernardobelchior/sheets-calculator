@@ -12,8 +12,11 @@ import {
 } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 import { Plus, Trash2 } from 'lucide-react-native';
-import { calculateCuts, type PieceRequirement, type SheetDimensions } from '@/lib/layout';
-
+import {
+  calculateCuts,
+  type PieceRequirement,
+  type SheetDimensions,
+} from '@/lib/layout';
 
 interface Position {
   x: number;
@@ -77,8 +80,8 @@ export default function Calculator() {
   const updatePiece = (index: number, updates: Partial<PieceRequirement>) => {
     setPieces(
       pieces.map((piece, i) =>
-        i === index ? { ...piece, ...updates } : piece
-      )
+        i === index ? { ...piece, ...updates } : piece,
+      ),
     );
   };
 
@@ -86,11 +89,13 @@ export default function Calculator() {
     if (!result) return null;
 
     const PADDING = 20;
-    const diagramWidth = screenWidth - (PADDING * 2);
+    const diagramWidth = screenWidth - PADDING * 2;
     const scale = diagramWidth / result.mainSheet.width;
     const diagramHeight = result.mainSheet.height * scale;
 
-    const sheetPositions = result.layout.positions.filter(p => p.sheetIndex === sheetIndex);
+    const sheetPositions = result.layout.positions.filter(
+      (p) => p.sheetIndex === sheetIndex,
+    );
 
     return (
       <View style={styles.diagramContainer} key={sheetIndex}>
@@ -123,8 +128,8 @@ export default function Calculator() {
           ))}
 
           {/* Cut lines */}
-          {Array.from(new Set(sheetPositions.map(p => p.x)))
-            .filter(x => x > 0)
+          {Array.from(new Set(sheetPositions.map((p) => p.x)))
+            .filter((x) => x > 0)
             .map((x, i) => (
               <Line
                 key={`v${i}`}
@@ -137,8 +142,8 @@ export default function Calculator() {
                 strokeDasharray="5,5"
               />
             ))}
-          {Array.from(new Set(sheetPositions.map(p => p.y)))
-            .filter(y => y > 0)
+          {Array.from(new Set(sheetPositions.map((p) => p.y)))
+            .filter((y) => y > 0)
             .map((y, i) => (
               <Line
                 key={`h${i}`}
@@ -157,18 +162,20 @@ export default function Calculator() {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
-      <ScrollView 
+      <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Main Sheet Dimensions</Text>
+          <Text className="font-bold" style={styles.sectionTitle}>
+            Main Sheet Dimensions
+          </Text>
           <View style={styles.row}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Width (mm)</Text>
@@ -176,7 +183,9 @@ export default function Calculator() {
                 style={styles.input}
                 keyboardType="numeric"
                 value={mainSheet.width.toString()}
-                onChangeText={(text) => setMainSheet({ ...mainSheet, width: Number(text) })}
+                onChangeText={(text) =>
+                  setMainSheet({ ...mainSheet, width: Number(text) })
+                }
               />
             </View>
             <View style={styles.inputContainer}>
@@ -185,7 +194,9 @@ export default function Calculator() {
                 style={styles.input}
                 keyboardType="numeric"
                 value={mainSheet.height.toString()}
-                onChangeText={(text) => setMainSheet({ ...mainSheet, height: Number(text) })}
+                onChangeText={(text) =>
+                  setMainSheet({ ...mainSheet, height: Number(text) })
+                }
               />
             </View>
             <View style={styles.inputContainer}>
@@ -194,7 +205,9 @@ export default function Calculator() {
                 style={styles.input}
                 keyboardType="numeric"
                 value={sheetQuantity.toString()}
-                onChangeText={(text) => setSheetQuantity(Math.max(1, Number(text)))}
+                onChangeText={(text) =>
+                  setSheetQuantity(Math.max(1, Number(text)))
+                }
               />
             </View>
           </View>
@@ -208,14 +221,22 @@ export default function Calculator() {
             </TouchableOpacity>
           </View>
           {pieces.map((piece, index) => (
-            <View key={index} style={styles.pieceContainer}>
+            <View key={index} className="px-1.5 mb-1">
               <View style={styles.pieceHeader}>
-                <View style={[styles.colorIndicator, { backgroundColor: piece.color }]} />
-                <Text style={styles.pieceTitle}>Piece {index + 1}</Text>
+                <View
+                  style={[
+                    styles.colorIndicator,
+                    { backgroundColor: piece.color },
+                  ]}
+                />
+                <Text className="text-lg font-semibold text-slate-700">
+                  Piece {index + 1}
+                </Text>
                 {pieces.length > 1 && (
                   <TouchableOpacity
                     style={styles.removeButton}
-                    onPress={() => removePiece(index)}>
+                    onPress={() => removePiece(index)}
+                  >
                     <Trash2 size={20} color="#ef4444" />
                   </TouchableOpacity>
                 )}
@@ -250,7 +271,9 @@ export default function Calculator() {
                     keyboardType="numeric"
                     value={piece.quantity.toString()}
                     onChangeText={(text) =>
-                      updatePiece(index, { quantity: Math.max(1, Number(text)) })
+                      updatePiece(index, {
+                        quantity: Math.max(1, Number(text)),
+                      })
                     }
                   />
                 </View>
@@ -259,19 +282,35 @@ export default function Calculator() {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={() => setResult(calculateCuts(mainSheet, pieces, sheetQuantity))}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() =>
+            setResult(calculateCuts(mainSheet, pieces, sheetQuantity))
+          }
+        >
           <Text style={styles.buttonText}>Calculate Cuts</Text>
         </TouchableOpacity>
 
         {result && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Results</Text>
-            {Array.from({ length: sheetQuantity }).map((_, index) => renderDiagram(index))}
+            {Array.from({ length: sheetQuantity }).map((_, index) =>
+              renderDiagram(index),
+            )}
             <View style={styles.statsContainer}>
-              <Text style={styles.stat}>Total cuts needed: {result.layout.totalCuts}</Text>
               <Text style={styles.stat}>
-                Total wasted area: {result.layout.wastedArea.toFixed(2)} mm²
-                ({((result.layout.wastedArea / (result.mainSheet.width * result.mainSheet.height * sheetQuantity)) * 100).toFixed(2)}%)
+                Total cuts needed: {result.layout.totalCuts}
+              </Text>
+              <Text style={styles.stat}>
+                Total wasted area: {result.layout.wastedArea.toFixed(2)} mm² (
+                {(
+                  (result.layout.wastedArea /
+                    (result.mainSheet.width *
+                      result.mainSheet.height *
+                      sheetQuantity)) *
+                  100
+                ).toFixed(2)}
+                %)
               </Text>
               <Text style={styles.stat}>
                 Pieces placed: {result.layout.positions.length} of{' '}
@@ -280,11 +319,19 @@ export default function Calculator() {
               {result.layout.unusedPieces.length > 0 && (
                 <View style={styles.unusedPiecesContainer}>
                   <Text style={styles.unusedPiecesTitle}>Unused Pieces:</Text>
-                  {result.layout.unusedPieces.map(({ pieceIndex, quantity }) => (
-                    <Text key={pieceIndex} style={[styles.unusedPiece, { color: pieces[pieceIndex].color }]}>
-                      • Piece {pieceIndex + 1}: {quantity} remaining
-                    </Text>
-                  ))}
+                  {result.layout.unusedPieces.map(
+                    ({ pieceIndex, quantity }) => (
+                      <Text
+                        key={pieceIndex}
+                        style={[
+                          styles.unusedPiece,
+                          { color: pieces[pieceIndex].color },
+                        ]}
+                      >
+                        • Piece {pieceIndex + 1}: {quantity} remaining
+                      </Text>
+                    ),
+                  )}
                 </View>
               )}
             </View>
@@ -306,7 +353,8 @@ const styles = StyleSheet.create({
   section: {
     backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 16,
+    padding: 8,
+    paddingHorizontal: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -318,7 +366,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 18,
@@ -377,23 +425,10 @@ const styles = StyleSheet.create({
   addButton: {
     padding: 8,
   },
-  pieceContainer: {
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 6,
-    padding: 12,
-    marginBottom: 12,
-  },
   pieceHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  pieceTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#334155',
-    flex: 1,
+    marginBottom: 4,
   },
   colorIndicator: {
     width: 12,
