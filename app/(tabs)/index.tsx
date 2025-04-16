@@ -85,6 +85,161 @@ export default function Calculator() {
     );
   };
 
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.section}>
+          <Text className="font-bold" style={styles.sectionTitle}>
+            Main Sheet Dimensions
+          </Text>
+          <View style={styles.row}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Width (mm)</Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                value={mainSheet.width.toString()}
+                onChangeText={(text) =>
+                  setMainSheet({ ...mainSheet, width: Number(text) })
+                }
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Height (mm)</Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                value={mainSheet.height.toString()}
+                onChangeText={(text) =>
+                  setMainSheet({ ...mainSheet, height: Number(text) })
+                }
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Quantity</Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                value={sheetQuantity.toString()}
+                onChangeText={(text) =>
+                  setSheetQuantity(Math.max(1, Number(text)))
+                }
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Required Pieces</Text>
+            <TouchableOpacity style={styles.addButton} onPress={addPiece}>
+              <Plus size={24} color="#0891b2" />
+            </TouchableOpacity>
+          </View>
+          {pieces.map((piece, index) => (
+            <View key={index} className="px-1.5 mb-2">
+              <View style={styles.pieceHeader}>
+                <View
+                  style={[
+                    styles.colorIndicator,
+                    { backgroundColor: piece.color },
+                  ]}
+                />
+                <Text className="text-lg font-semibold text-slate-700">
+                  Piece {index + 1}
+                </Text>
+                {pieces.length > 1 && (
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => removePiece(index)}
+                  >
+                    <Trash2 size={20} color="#ef4444" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <View style={styles.row}>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Width (mm)</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={piece.width.toString()}
+                    onChangeText={(text) =>
+                      updatePiece(index, { width: Number(text) })
+                    }
+                  />
+                </View>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Height (mm)</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={piece.height.toString()}
+                    onChangeText={(text) =>
+                      updatePiece(index, { height: Number(text) })
+                    }
+                  />
+                </View>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Quantity</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={piece.quantity.toString()}
+                    onChangeText={(text) =>
+                      updatePiece(index, {
+                        quantity: Math.max(1, Number(text)),
+                      })
+                    }
+                  />
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() =>
+            setResult(calculateCuts(mainSheet, pieces, sheetQuantity))
+          }
+        >
+          <Text style={styles.buttonText}>Calculate Cuts</Text>
+        </TouchableOpacity>
+
+        {result && (
+          <ResultsSection
+            result={result}
+            pieces={pieces}
+            sheetQuantity={sheetQuantity}
+          />
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+interface ResultsSectionProps {
+  result: CutResult;
+  pieces: PieceRequirement[];
+  sheetQuantity: number;
+}
+
+function ResultsSection({
+  result,
+  pieces,
+  sheetQuantity,
+}: ResultsSectionProps) {
+  const { width: screenWidth } = useWindowDimensions();
+
   const renderDiagram = (sheetIndex: number) => {
     if (!result) return null;
 
@@ -162,183 +317,48 @@ export default function Calculator() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-    >
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.section}>
-          <Text className="font-bold" style={styles.sectionTitle}>
-            Main Sheet Dimensions
-          </Text>
-          <View style={styles.row}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Width (mm)</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                value={mainSheet.width.toString()}
-                onChangeText={(text) =>
-                  setMainSheet({ ...mainSheet, width: Number(text) })
-                }
-              />
-            </View>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Height (mm)</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                value={mainSheet.height.toString()}
-                onChangeText={(text) =>
-                  setMainSheet({ ...mainSheet, height: Number(text) })
-                }
-              />
-            </View>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Quantity</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                value={sheetQuantity.toString()}
-                onChangeText={(text) =>
-                  setSheetQuantity(Math.max(1, Number(text)))
-                }
-              />
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Required Pieces</Text>
-            <TouchableOpacity style={styles.addButton} onPress={addPiece}>
-              <Plus size={24} color="#0891b2" />
-            </TouchableOpacity>
-          </View>
-          {pieces.map((piece, index) => (
-            <View key={index} className="px-1.5 mb-1">
-              <View style={styles.pieceHeader}>
-                <View
-                  style={[
-                    styles.colorIndicator,
-                    { backgroundColor: piece.color },
-                  ]}
-                />
-                <Text className="text-lg font-semibold text-slate-700">
-                  Piece {index + 1}
-                </Text>
-                {pieces.length > 1 && (
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removePiece(index)}
-                  >
-                    <Trash2 size={20} color="#ef4444" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={styles.row}>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Width (mm)</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={piece.width.toString()}
-                    onChangeText={(text) =>
-                      updatePiece(index, { width: Number(text) })
-                    }
-                  />
-                </View>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Height (mm)</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={piece.height.toString()}
-                    onChangeText={(text) =>
-                      updatePiece(index, { height: Number(text) })
-                    }
-                  />
-                </View>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.label}>Quantity</Text>
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="numeric"
-                    value={piece.quantity.toString()}
-                    onChangeText={(text) =>
-                      updatePiece(index, {
-                        quantity: Math.max(1, Number(text)),
-                      })
-                    }
-                  />
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() =>
-            setResult(calculateCuts(mainSheet, pieces, sheetQuantity))
-          }
-        >
-          <Text style={styles.buttonText}>Calculate Cuts</Text>
-        </TouchableOpacity>
-
-        {result && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Results</Text>
-            {Array.from({ length: sheetQuantity }).map((_, index) =>
-              renderDiagram(index),
-            )}
-            <View style={styles.statsContainer}>
-              <Text style={styles.stat}>
-                Total cuts needed: {result.layout.totalCuts}
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Results</Text>
+      {Array.from({ length: sheetQuantity }).map((_, index) =>
+        renderDiagram(index),
+      )}
+      <View style={styles.statsContainer}>
+        <Text style={styles.stat}>
+          Total cuts needed: {result.layout.totalCuts}
+        </Text>
+        <Text style={styles.stat}>
+          Total wasted area: {result.layout.wastedArea.toFixed(2)} mm² (
+          {(
+            (result.layout.wastedArea /
+              (result.mainSheet.width *
+                result.mainSheet.height *
+                sheetQuantity)) *
+            100
+          ).toFixed(2)}
+          %)
+        </Text>
+        <Text style={styles.stat}>
+          Pieces placed: {result.layout.positions.length} of{' '}
+          {pieces.reduce((sum, piece) => sum + piece.quantity, 0)}
+        </Text>
+        {result.layout.unusedPieces.length > 0 && (
+          <View style={styles.unusedPiecesContainer}>
+            <Text style={styles.unusedPiecesTitle}>Unused Pieces:</Text>
+            {result.layout.unusedPieces.map(({ pieceIndex, quantity }) => (
+              <Text
+                key={pieceIndex}
+                style={[
+                  styles.unusedPiece,
+                  { color: pieces[pieceIndex].color },
+                ]}
+              >
+                • Piece {pieceIndex + 1}: {quantity} remaining
               </Text>
-              <Text style={styles.stat}>
-                Total wasted area: {result.layout.wastedArea.toFixed(2)} mm² (
-                {(
-                  (result.layout.wastedArea /
-                    (result.mainSheet.width *
-                      result.mainSheet.height *
-                      sheetQuantity)) *
-                  100
-                ).toFixed(2)}
-                %)
-              </Text>
-              <Text style={styles.stat}>
-                Pieces placed: {result.layout.positions.length} of{' '}
-                {pieces.reduce((sum, piece) => sum + piece.quantity, 0)}
-              </Text>
-              {result.layout.unusedPieces.length > 0 && (
-                <View style={styles.unusedPiecesContainer}>
-                  <Text style={styles.unusedPiecesTitle}>Unused Pieces:</Text>
-                  {result.layout.unusedPieces.map(
-                    ({ pieceIndex, quantity }) => (
-                      <Text
-                        key={pieceIndex}
-                        style={[
-                          styles.unusedPiece,
-                          { color: pieces[pieceIndex].color },
-                        ]}
-                      >
-                        • Piece {pieceIndex + 1}: {quantity} remaining
-                      </Text>
-                    ),
-                  )}
-                </View>
-              )}
-            </View>
+            ))}
           </View>
         )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+    </View>
   );
 }
 
@@ -366,7 +386,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 18,
@@ -376,7 +395,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   inputContainer: {
     flex: 1,
