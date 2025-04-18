@@ -34,3 +34,6 @@ yarn-error.*
 *.tsbuildinfo
 
 .idea
+
+android/
+ios/
