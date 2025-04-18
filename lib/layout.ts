@@ -4,12 +4,21 @@ export interface SheetDimensions {
 }
 
 export interface PieceRequirement extends SheetDimensions {
+  id: string;
   quantity: number;
   color?: string;
 }
 
-export const calculateCuts = (mainSheet: SheetDimensions, pieces: PieceRequirement[], sheetQuantity: number) => {
-  if (!mainSheet.width || !mainSheet.height || pieces.some(p => !p.width || !p.height)) {
+export const calculateCuts = (
+  mainSheet: SheetDimensions,
+  pieces: PieceRequirement[],
+  sheetQuantity: number,
+) => {
+  if (
+    !mainSheet.width ||
+    !mainSheet.height ||
+    pieces.some((p) => !p.width || !p.height)
+  ) {
     return null;
   }
 
@@ -17,28 +26,40 @@ export const calculateCuts = (mainSheet: SheetDimensions, pieces: PieceRequireme
 
   for (const piece of pieces) {
     for (let i = 0; i < piece.quantity; i++) {
-      allPieces.push({ width: piece.width, height: piece.height, id: `${piece.width}-${piece.height}-${i}` });
+      allPieces.push({
+        width: piece.width,
+        height: piece.height,
+        id: `${piece.width}-${piece.height}-${i}`,
+      });
     }
   }
 
-  const solution = bestFitDecreasing2D(allPieces, mainSheet.width, mainSheet.height, sheetQuantity);
+  const solution = bestFitDecreasing2D(
+    allPieces,
+    mainSheet.width,
+    mainSheet.height,
+    sheetQuantity,
+  );
 
   return {
     mainSheet,
     pieces,
     layout: {
-      positions: solution.placements.map(p => ({
+      positions: solution.placements.map((p) => ({
         x: p.x,
         y: p.y,
         width: p.width,
         height: p.height,
         pieceIndex: p.rectId.split('-').at(-1),
-        sheetIndex: p.binIndex
+        sheetIndex: p.binIndex,
       })),
       wastedArea: 0,
       totalCuts: 0,
-      unusedPieces: solution.rejected.map(r => ({ pieceIndex: r.id.split('-').at(-1), quantity: 1 }))
-    }
+      unusedPieces: solution.rejected.map((r) => ({
+        pieceIndex: r.id.split('-').at(-1),
+        quantity: 1,
+      })),
+    },
   };
 };
 
@@ -71,7 +92,9 @@ type Placement = {
 };
 
 function fitsInShelf(rect: Rect, shelf: Shelf, binWidth: number): boolean {
-  return rect.width + shelf.usedWidth <= binWidth && rect.height <= shelf.height;
+  return (
+    rect.width + shelf.usedWidth <= binWidth && rect.height <= shelf.height
+  );
 }
 
 function addToShelf(rect: Rect, shelf: Shelf): { x: number; y: number } {
@@ -90,9 +113,11 @@ function bestFitDecreasing2D(
   rects: Rect[],
   binWidth: number,
   binHeight: number,
-  maxBins: number
+  maxBins: number,
 ): { placements: Placement[]; rejected: Rect[] } {
-  const sortedRects = [...rects].sort((a, b) => b.height * b.width - a.height * a.width);
+  const sortedRects = [...rects].sort(
+    (a, b) => b.height * b.width - a.height * a.width,
+  );
   const bins: Bin[] = [];
   const rejected: Rect[] = [];
 
@@ -125,7 +150,7 @@ function bestFitDecreasing2D(
         y: pos.y,
         width: rect.width,
         height: rect.height,
-        binIndex: bestBinIndex
+        binIndex: bestBinIndex,
       });
     } else {
       // Try to add new shelf to an existing bin
@@ -134,9 +159,20 @@ function bestFitDecreasing2D(
         const bin = bins[i];
         if (canStartNewShelf(rect, bin)) {
           const y = bin.shelves.reduce((sum, shelf) => sum + shelf.height, 0);
-          const newShelf: Shelf = { y, height: rect.height, usedWidth: rect.width };
+          const newShelf: Shelf = {
+            y,
+            height: rect.height,
+            usedWidth: rect.width,
+          };
           bin.shelves.push(newShelf);
-          bin.placements.push({ rectId: rect.id, x: 0, y, width: rect.width, height: rect.height, binIndex: i });
+          bin.placements.push({
+            rectId: rect.id,
+            x: 0,
+            y,
+            width: rect.width,
+            height: rect.height,
+            binIndex: i,
+          });
           placedInExistingBin = true;
           break;
         }
@@ -145,19 +181,25 @@ function bestFitDecreasing2D(
       if (!placedInExistingBin) {
         if (bins.length < maxBins) {
           // Create a new bin and place the rectangle
-          const newShelf: Shelf = { y: 0, height: rect.height, usedWidth: rect.width };
+          const newShelf: Shelf = {
+            y: 0,
+            height: rect.height,
+            usedWidth: rect.width,
+          };
           const newBin: Bin = {
             width: binWidth,
             height: binHeight,
             shelves: [newShelf],
-            placements: [{
-              rectId: rect.id,
-              x: 0,
-              y: 0,
-              width: rect.width,
-              height: rect.height,
-              binIndex: bins.length
-            }]
+            placements: [
+              {
+                rectId: rect.id,
+                x: 0,
+                y: 0,
+                width: rect.width,
+                height: rect.height,
+                binIndex: bins.length,
+              },
+            ],
           };
           bins.push(newBin);
         } else {
@@ -168,7 +210,6 @@ function bestFitDecreasing2D(
     }
   }
 
-  const allPlacements = bins.flatMap(bin => bin.placements);
+  const allPlacements = bins.flatMap((bin) => bin.placements);
   return { placements: allPlacements, rejected };
 }
-

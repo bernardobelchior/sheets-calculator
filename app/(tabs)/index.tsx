@@ -13,6 +13,7 @@ import {
 import Svg, { Rect, Line } from 'react-native-svg';
 import { Trash2 } from 'lucide-react-native';
 import SwipeableItem from 'react-native-swipeable-item';
+import * as crypto from 'expo-crypto';
 import {
   calculateCuts,
   type PieceRequirement,
@@ -56,8 +57,14 @@ export default function Calculator() {
     height: 0,
   });
   const [sheetQuantity, setSheetQuantity] = useState<number>(1);
-  const [pieces, setPieces] = useState<PieceRequirement[]>([
-    { width: 0, height: 0, quantity: 1, color: COLORS[0] },
+  const [pieces, setPieces] = useState<PieceRequirement[]>(() => [
+    {
+      id: crypto.randomUUID(),
+      width: 0,
+      height: 0,
+      quantity: 1,
+      color: COLORS[0],
+    },
   ]);
   const [result, setResult] = useState<CutResult | null>(null);
 
@@ -65,6 +72,7 @@ export default function Calculator() {
     setPieces([
       ...pieces,
       {
+        id: crypto.randomUUID(),
         width: 0,
         height: 0,
         quantity: 1,
@@ -139,11 +147,28 @@ export default function Calculator() {
 
         <View style={[styles.section, styles.noPadding]}>
           <View className="px-4" style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Required Pieces</Text>
+            <Text className="mb-1" style={styles.sectionTitle}>
+              Required Pieces
+            </Text>
+          </View>
+
+          <View className="flex flex-row justify-between gap-2 px-4">
+            <View className="flex flex-1 justify-start">
+              <Text style={styles.label}>Piece</Text>
+            </View>
+            <View className="flex flex-1 justify-start">
+              <Text style={styles.label}>Width (mm)</Text>
+            </View>
+            <View className="flex flex-1  justify-start">
+              <Text style={styles.label}>Height (mm)</Text>
+            </View>
+            <View className="flex flex-1 justify-start">
+              <Text style={styles.label}>Quantity</Text>
+            </View>
           </View>
           {pieces.map((piece, index) => (
             <View
-              key={index}
+              key={piece.id}
               className="mt-2"
               style={styles.swipeableItemWrapper}
             >
@@ -169,9 +194,7 @@ export default function Calculator() {
                   className="px-4"
                   piece={piece}
                   index={index}
-                  totalPieces={pieces.length}
                   onUpdate={updatePiece}
-                  onRemove={removePiece}
                 />
               </SwipeableItem>
             </View>
@@ -209,32 +232,22 @@ interface PieceItemProps {
   className?: string;
   piece: PieceRequirement;
   index: number;
-  totalPieces: number;
   onUpdate: (index: number, updates: Partial<PieceRequirement>) => void;
-  onRemove: (index: number) => void;
 }
 
-const PieceItem = ({
-  className,
-  piece,
-  index,
-  totalPieces,
-  onUpdate,
-  onRemove,
-}: PieceItemProps) => {
+const PieceItem = ({ className, piece, index, onUpdate }: PieceItemProps) => {
   return (
     <View className={'px-1.5 bg-white ' + (className ?? '')}>
-      <View style={styles.pieceHeader}>
-        <View
-          style={[styles.colorIndicator, { backgroundColor: piece.color }]}
-        />
-        <Text className="text-lg font-semibold text-slate-700">
-          Piece {index + 1}
-        </Text>
-      </View>
-      <View style={styles.row}>
+      <View className="flex flex-row items-center gap-2">
+        <View className="flex flex-1 flex-row items-center gap-2">
+          <View
+            style={[styles.colorIndicator, { backgroundColor: piece.color }]}
+          />
+          <Text className="text-lg font-semibold text-slate-700">
+            Piece {index + 1}
+          </Text>
+        </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Width (mm)</Text>
           <TextInput
             style={styles.input}
             keyboardType="numeric"
@@ -243,7 +256,6 @@ const PieceItem = ({
           />
         </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Height (mm)</Text>
           <TextInput
             style={styles.input}
             keyboardType="numeric"
@@ -252,7 +264,6 @@ const PieceItem = ({
           />
         </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Quantity</Text>
           <TextInput
             style={styles.input}
             keyboardType="numeric"
@@ -501,7 +512,6 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginRight: 8,
   },
   removeButton: {
     padding: 4,
