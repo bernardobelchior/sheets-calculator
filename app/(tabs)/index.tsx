@@ -11,7 +11,8 @@ import {
   Platform,
 } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
-import { Plus, Trash2 } from 'lucide-react-native';
+import { Trash2 } from 'lucide-react-native';
+import SwipeableItem from 'react-native-swipeable-item';
 import {
   calculateCuts,
   type PieceRequirement,
@@ -136,27 +137,55 @@ export default function Calculator() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+        <View style={[styles.section, styles.noPadding]}>
+          <View className="px-4" style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Required Pieces</Text>
-            <TouchableOpacity style={styles.addButton} onPress={addPiece}>
-              <Plus size={24} color="#0891b2" />
-            </TouchableOpacity>
           </View>
           {pieces.map((piece, index) => (
-            <PieceItem
+            <View
               key={index}
-              piece={piece}
-              index={index}
-              totalPieces={pieces.length}
-              onUpdate={updatePiece}
-              onRemove={removePiece}
-            />
+              className="mt-2"
+              style={styles.swipeableItemWrapper}
+            >
+              <SwipeableItem
+                item={piece}
+                renderUnderlayLeft={() => (
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#ef4444',
+                      justifyContent: 'center',
+                      alignItems: 'flex-end',
+                      paddingRight: 24,
+                    }}
+                    onPress={() => removePiece(index)}
+                  >
+                    <Trash2 size={24} color="#fff" />
+                  </TouchableOpacity>
+                )}
+                snapPointsLeft={[80]}
+              >
+                <PieceItem
+                  className="px-4"
+                  piece={piece}
+                  index={index}
+                  totalPieces={pieces.length}
+                  onUpdate={updatePiece}
+                  onRemove={removePiece}
+                />
+              </SwipeableItem>
+            </View>
           ))}
         </View>
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, styles.secondaryButton]}
+          onPress={addPiece}
+        >
+          <Text style={styles.buttonText}>Add Piece</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, styles.primaryButton]}
           onPress={() =>
             setResult(calculateCuts(mainSheet, pieces, sheetQuantity))
           }
@@ -177,6 +206,7 @@ export default function Calculator() {
 }
 
 interface PieceItemProps {
+  className?: string;
   piece: PieceRequirement;
   index: number;
   totalPieces: number;
@@ -185,6 +215,7 @@ interface PieceItemProps {
 }
 
 const PieceItem = ({
+  className,
   piece,
   index,
   totalPieces,
@@ -192,7 +223,7 @@ const PieceItem = ({
   onRemove,
 }: PieceItemProps) => {
   return (
-    <View className="px-1.5 mb-2">
+    <View className={'px-1.5 bg-white ' + (className ?? '')}>
       <View style={styles.pieceHeader}>
         <View
           style={[styles.colorIndicator, { backgroundColor: piece.color }]}
@@ -200,14 +231,6 @@ const PieceItem = ({
         <Text className="text-lg font-semibold text-slate-700">
           Piece {index + 1}
         </Text>
-        {totalPieces > 1 && (
-          <TouchableOpacity
-            style={styles.removeButton}
-            onPress={() => onRemove(index)}
-          >
-            <Trash2 size={20} color="#ef4444" />
-          </TouchableOpacity>
-        )}
       </View>
       <View style={styles.row}>
         <View style={styles.inputContainer}>
@@ -384,22 +407,19 @@ function ResultsSection({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
   },
   contentContainer: {
-    padding: 16,
+    paddingVertical: 16,
   },
   section: {
-    backgroundColor: '#fff',
     borderRadius: 8,
     padding: 8,
     paddingHorizontal: 16,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+  },
+  noPadding: {
+    paddingHorizontal: 0,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -410,6 +430,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#0891b2',
+  },
+  swipeableItemWrapper: {
+    flex: 1,
   },
   row: {
     flexDirection: 'row',
@@ -431,9 +454,15 @@ const styles = StyleSheet.create({
     padding: 8,
     fontSize: 16,
   },
-  button: {
+  primaryButton: {
     backgroundColor: '#0891b2',
+  },
+  secondaryButton: {
+    backgroundColor: '#64748b',
+  },
+  button: {
     padding: 16,
+    marginHorizontal: 8,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 16,
