@@ -5,15 +5,36 @@ export interface SheetDimensions {
 
 export interface PieceRequirement extends SheetDimensions {
   id: string;
+  name: string;
   quantity: number;
-  color?: string;
+  color: string;
+}
+
+export interface Position {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  sheetIndex: number;
+}
+
+export interface Result {
+  mainSheet: SheetDimensions;
+  pieces: PieceRequirement[];
+  layout: {
+    positions: Position[];
+    wastedArea: number;
+    totalCuts: number;
+    unusedPieces: { id: string; name: string; quantity: number }[];
+  };
 }
 
 export const calculateCuts = (
   mainSheet: SheetDimensions,
   pieces: PieceRequirement[],
   sheetQuantity: number,
-) => {
+): Result | null => {
   if (
     !mainSheet.width ||
     !mainSheet.height ||
@@ -29,7 +50,7 @@ export const calculateCuts = (
       allPieces.push({
         width: piece.width,
         height: piece.height,
-        id: `${piece.width}-${piece.height}-${i}`,
+        id: piece.id,
       });
     }
   }
@@ -46,17 +67,18 @@ export const calculateCuts = (
     pieces,
     layout: {
       positions: solution.placements.map((p) => ({
+        id: p.rectId,
         x: p.x,
         y: p.y,
         width: p.width,
         height: p.height,
-        pieceIndex: p.rectId.split('-').at(-1),
         sheetIndex: p.binIndex,
       })),
       wastedArea: 0,
       totalCuts: 0,
       unusedPieces: solution.rejected.map((r) => ({
-        pieceIndex: r.id.split('-').at(-1),
+        id: r.id,
+        name: pieces.find((p) => p.id === r.id)?.name ?? 'Unknown',
         quantity: 1,
       })),
     },
@@ -109,12 +131,17 @@ function canStartNewShelf(rect: Rect, bin: Bin): boolean {
   return usedHeight + rect.height <= bin.height;
 }
 
+interface BestFitDecreasing2DResult {
+  placements: Placement[];
+  rejected: Rect[];
+}
+
 function bestFitDecreasing2D(
   rects: Rect[],
   binWidth: number,
   binHeight: number,
   maxBins: number,
-): { placements: Placement[]; rejected: Rect[] } {
+): BestFitDecreasing2DResult {
   const sortedRects = [...rects].sort(
     (a, b) => b.height * b.width - a.height * a.width,
   );

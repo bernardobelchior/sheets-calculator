@@ -1,44 +1,25 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
-  View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  useWindowDimensions,
-  KeyboardAvoidingView,
-  Platform,
+  View,
 } from 'react-native';
-import Svg, { Rect, Line } from 'react-native-svg';
 import { Trash2 } from 'lucide-react-native';
 import SwipeableItem from 'react-native-swipeable-item';
 import * as crypto from 'expo-crypto';
 import {
   calculateCuts,
   type PieceRequirement,
+  type Result,
   type SheetDimensions,
 } from '@/lib/layout';
-
-interface Position {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  pieceIndex: number;
-  sheetIndex: number;
-}
-
-interface CutResult {
-  mainSheet: SheetDimensions;
-  pieces: PieceRequirement[];
-  layout: {
-    positions: Position[];
-    wastedArea: number;
-    totalCuts: number;
-    unusedPieces: { pieceIndex: number; quantity: number }[];
-  };
-}
+import { PieceItem } from '@/components/PieceItem';
+import { ResultsSection } from '@/components/ResultsSection';
 
 const COLORS = [
   '#ef4444', // red
@@ -53,32 +34,52 @@ const COLORS = [
 
 export default function Calculator() {
   const [mainSheet, setMainSheet] = useState<SheetDimensions>({
-    width: 0,
-    height: 0,
+    width: 2500,
+    height: 1250,
   });
-  const [sheetQuantity, setSheetQuantity] = useState<number>(1);
+  const [sheetQuantity, setSheetQuantity] = useState<number>(2);
+  const lastPieceCount = useRef(4);
   const [pieces, setPieces] = useState<PieceRequirement[]>(() => [
     {
       id: crypto.randomUUID(),
-      width: 0,
-      height: 0,
-      quantity: 1,
+      name: `Piece 1`,
+      width: 1274,
+      height: 1111,
+      quantity: 2,
       color: COLORS[0],
     },
+    {
+      id: crypto.randomUUID(),
+      name: `Piece 2`,
+      width: 1480,
+      height: 120,
+      quantity: 4,
+      color: COLORS[1],
+    },
+    {
+      id: crypto.randomUUID(),
+      name: `Piece 3`,
+      width: 960,
+      height: 128,
+      quantity: 4,
+      color: COLORS[2],
+    },
   ]);
-  const [result, setResult] = useState<CutResult | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
 
   const addPiece = () => {
     setPieces([
       ...pieces,
       {
         id: crypto.randomUUID(),
+        name: `Piece ${lastPieceCount.current}`,
         width: 0,
         height: 0,
         quantity: 1,
         color: COLORS[pieces.length % COLORS.length],
       },
     ]);
+    lastPieceCount.current += 1;
   };
 
   const removePiece = (index: number) => {
@@ -110,7 +111,9 @@ export default function Calculator() {
           </Text>
           <View style={styles.row}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Width (mm)</Text>
+              <Text className="mb-1" style={styles.label}>
+                Width (mm)
+              </Text>
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -121,7 +124,9 @@ export default function Calculator() {
               />
             </View>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Height (mm)</Text>
+              <Text className="mb-1" style={styles.label}>
+                Height (mm)
+              </Text>
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -132,7 +137,9 @@ export default function Calculator() {
               />
             </View>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Quantity</Text>
+              <Text className="mb-1" style={styles.label}>
+                Quantity
+              </Text>
               <TextInput
                 style={styles.input}
                 keyboardType="numeric"
@@ -147,31 +154,24 @@ export default function Calculator() {
 
         <View style={[styles.section, styles.noPadding]}>
           <View className="px-4" style={styles.sectionHeader}>
-            <Text className="mb-1" style={styles.sectionTitle}>
+            <Text className="mb-0.5" style={styles.sectionTitle}>
               Required Pieces
             </Text>
           </View>
+          <Text className="px-4 mb-2" style={styles.sectionSubtitle}>
+            Measurements in mm
+          </Text>
 
           <View className="flex flex-row justify-between gap-2 px-4">
-            <View className="flex flex-1 justify-start">
-              <Text style={styles.label}>Piece</Text>
-            </View>
-            <View className="flex flex-1 justify-start">
-              <Text style={styles.label}>Width (mm)</Text>
-            </View>
-            <View className="flex flex-1  justify-start">
-              <Text style={styles.label}>Height (mm)</Text>
-            </View>
-            <View className="flex flex-1 justify-start">
-              <Text style={styles.label}>Quantity</Text>
-            </View>
+            <Text className="ml-6" style={[styles.label, styles.nameInput]}>
+              Piece
+            </Text>
+            <Text style={[styles.label, styles.dimensionInput]}>Width</Text>
+            <Text style={[styles.label, styles.dimensionInput]}>Height</Text>
+            <Text style={[styles.label, styles.quantityInput]}>Qty</Text>
           </View>
           {pieces.map((piece, index) => (
-            <View
-              key={piece.id}
-              className="mt-2"
-              style={styles.swipeableItemWrapper}
-            >
+            <View key={piece.id} className="mt-2 flex-1">
               <SwipeableItem
                 item={piece}
                 renderUnderlayLeft={() => (
@@ -228,193 +228,6 @@ export default function Calculator() {
   );
 }
 
-interface PieceItemProps {
-  className?: string;
-  piece: PieceRequirement;
-  index: number;
-  onUpdate: (index: number, updates: Partial<PieceRequirement>) => void;
-}
-
-const PieceItem = ({ className, piece, index, onUpdate }: PieceItemProps) => {
-  return (
-    <View className={'px-1.5 bg-white ' + (className ?? '')}>
-      <View className="flex flex-row items-center gap-2">
-        <View className="flex flex-1 flex-row items-center gap-2">
-          <View
-            style={[styles.colorIndicator, { backgroundColor: piece.color }]}
-          />
-          <Text className="text-lg font-semibold text-slate-700">
-            Piece {index + 1}
-          </Text>
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={piece.width.toString()}
-            onChangeText={(text) => onUpdate(index, { width: Number(text) })}
-          />
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={piece.height.toString()}
-            onChangeText={(text) => onUpdate(index, { height: Number(text) })}
-          />
-        </View>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={piece.quantity.toString()}
-            onChangeText={(text) =>
-              onUpdate(index, {
-                quantity: Math.max(1, Number(text)),
-              })
-            }
-          />
-        </View>
-      </View>
-    </View>
-  );
-};
-
-interface ResultsSectionProps {
-  result: CutResult;
-  pieces: PieceRequirement[];
-  sheetQuantity: number;
-}
-
-function ResultsSection({
-  result,
-  pieces,
-  sheetQuantity,
-}: ResultsSectionProps) {
-  const { width: screenWidth } = useWindowDimensions();
-
-  const renderDiagram = (sheetIndex: number) => {
-    if (!result) return null;
-
-    const PADDING = 20;
-    const diagramWidth = screenWidth - PADDING * 2;
-    const scale = diagramWidth / result.mainSheet.width;
-    const diagramHeight = result.mainSheet.height * scale;
-
-    const sheetPositions = result.layout.positions.filter(
-      (p) => p.sheetIndex === sheetIndex,
-    );
-
-    return (
-      <View style={styles.diagramContainer} key={sheetIndex}>
-        <Text style={styles.sheetTitle}>Sheet {sheetIndex + 1}</Text>
-        <Svg width={diagramWidth} height={diagramHeight}>
-          {/* Main sheet outline */}
-          <Rect
-            x={0}
-            y={0}
-            width={diagramWidth}
-            height={diagramHeight}
-            stroke="#000"
-            strokeWidth="2"
-            fill="none"
-          />
-
-          {/* Pieces */}
-          {sheetPositions.map((pos, index) => (
-            <Rect
-              key={index}
-              x={pos.x * scale}
-              y={pos.y * scale}
-              width={pos.width * scale}
-              height={pos.height * scale}
-              fill={result.pieces[pos.pieceIndex].color}
-              fillOpacity={0.3}
-              stroke={result.pieces[pos.pieceIndex].color}
-              strokeWidth="1"
-            />
-          ))}
-
-          {/* Cut lines */}
-          {Array.from(new Set(sheetPositions.map((p) => p.x)))
-            .filter((x) => x > 0)
-            .map((x, i) => (
-              <Line
-                key={`v${i}`}
-                x1={x * scale}
-                y1={0}
-                x2={x * scale}
-                y2={diagramHeight}
-                stroke="#ff0000"
-                strokeWidth="1"
-                strokeDasharray="5,5"
-              />
-            ))}
-          {Array.from(new Set(sheetPositions.map((p) => p.y)))
-            .filter((y) => y > 0)
-            .map((y, i) => (
-              <Line
-                key={`h${i}`}
-                x1={0}
-                y1={y * scale}
-                x2={diagramWidth}
-                y2={y * scale}
-                stroke="#ff0000"
-                strokeWidth="1"
-                strokeDasharray="5,5"
-              />
-            ))}
-        </Svg>
-      </View>
-    );
-  };
-
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Results</Text>
-      {Array.from({ length: sheetQuantity }).map((_, index) =>
-        renderDiagram(index),
-      )}
-      <View style={styles.statsContainer}>
-        <Text style={styles.stat}>
-          Total cuts needed: {result.layout.totalCuts}
-        </Text>
-        <Text style={styles.stat}>
-          Total wasted area: {result.layout.wastedArea.toFixed(2)} mm² (
-          {(
-            (result.layout.wastedArea /
-              (result.mainSheet.width *
-                result.mainSheet.height *
-                sheetQuantity)) *
-            100
-          ).toFixed(2)}
-          %)
-        </Text>
-        <Text style={styles.stat}>
-          Pieces placed: {result.layout.positions.length} of{' '}
-          {pieces.reduce((sum, piece) => sum + piece.quantity, 0)}
-        </Text>
-        {result.layout.unusedPieces.length > 0 && (
-          <View style={styles.unusedPiecesContainer}>
-            <Text style={styles.unusedPiecesTitle}>Unused Pieces:</Text>
-            {result.layout.unusedPieces.map(({ pieceIndex, quantity }) => (
-              <Text
-                key={pieceIndex}
-                style={[
-                  styles.unusedPiece,
-                  { color: pieces[pieceIndex].color },
-                ]}
-              >
-                • Piece {pieceIndex + 1}: {quantity} remaining
-              </Text>
-            ))}
-          </View>
-        )}
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -442,6 +255,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0891b2',
   },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+  },
   swipeableItemWrapper: {
     flex: 1,
   },
@@ -455,7 +272,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    marginBottom: 4,
     color: '#64748b',
   },
   input: {
@@ -464,6 +280,15 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 8,
     fontSize: 16,
+  },
+  nameInput: {
+    flex: 1,
+  },
+  dimensionInput: {
+    minWidth: 72,
+  },
+  quantityInput: {
+    minWidth: 48,
   },
   primaryButton: {
     backgroundColor: '#0891b2',
@@ -482,54 +307,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  diagramContainer: {
-    marginVertical: 16,
-    alignItems: 'center',
-  },
-  sheetTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 8,
-  },
-  statsContainer: {
-    gap: 8,
-  },
-  stat: {
-    fontSize: 16,
-    color: '#334155',
-  },
-  addButton: {
-    padding: 8,
-  },
-  pieceHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  colorIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  removeButton: {
-    padding: 4,
-  },
-  unusedPiecesContainer: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: '#f8fafc',
-    borderRadius: 6,
-  },
-  unusedPiecesTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 8,
-  },
-  unusedPiece: {
-    fontSize: 14,
-    marginLeft: 8,
   },
 });
