@@ -38,7 +38,6 @@ export default function Calculator() {
     height: 1250,
   });
   const [sheetQuantity, setSheetQuantity] = useState<number>(2);
-  const lastPieceCount = useRef(4);
   const [pieces, setPieces] = useState<PieceRequirement[]>(() => [
     {
       id: crypto.randomUUID(),
@@ -65,6 +64,7 @@ export default function Calculator() {
       color: COLORS[2],
     },
   ]);
+  const lastPieceCount = useRef(pieces.length);
   const [result, setResult] = useState<Result | null>(null);
 
   const addPiece = () => {
